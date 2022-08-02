@@ -1,14 +1,15 @@
 import shutil
+import os
 
 
 def numbermaker(numbers):
     number = ''
-    for i in numbers:
-        if i not in '()+':
-            if i == numbers[0] and i == '8':
+    for j in range(len(numbers)):
+        if numbers[j] not in '()+':
+            if numbers[j] == '8' and str(j) == '0':
                 number += '7'
             else:
-                number += i
+                number += numbers[j]
     return number
 
 
@@ -38,3 +39,28 @@ def updatebd():
     rite = open(file, 'w', encoding="utf8")
     rite.write(newfile)
     rite.close()
+
+
+def closerequest():
+    crntfile = r'requests.txt'
+    shutil.copy2(crntfile, 'requestscopy.txt')
+    file = r'requestscopy.txt'
+    text = open(file, 'r', encoding="utf8")
+    line = text.readline()
+    text2 = open(crntfile, 'w', encoding="utf8")
+    text2.write('')
+    text2.close()
+
+    text2 = open(crntfile, 'a', encoding="utf8")
+    while line != '':
+        previousline = line
+        line = text.readline()
+        if line == '':
+            text2.write(str(previousline.split()[:-1]) + ' closed \n')
+        else:
+            text2.write(previousline)
+    collect = previousline.split()[:-1].copy()
+    text2.close()
+    text.close()
+    os.remove(file)
+    return collect[-2:][0]
