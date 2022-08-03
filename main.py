@@ -2,6 +2,7 @@ import telebot
 bot = telebot.TeleBot('5563607419:AAFfH-vzlFs7fJqo2xlhVtCQLq4W_HyUrLY')
 from telebot import types
 import clist
+import sqltable
 
 
 @bot.message_handler(commands=['start'])
@@ -40,35 +41,12 @@ def callback_inline(call):  # TODO персонализировать преоб
 
 
 def verify(message):
-    file = r'bdlist.txt'
-    text = open(file, 'r', encoding="utf8")
-    line = text.readline()
-    flag = True
-    while line != '':
-        if str(message.chat.id) == line.split()[4]:
-            role = 'Пользователь'
-            flag = False
-            break
-        line = text.readline()
-    text.close()
-    if flag:
-        file = r'bdlistoper.txt'
-        text = open(file, 'r', encoding="utf8")
-        line = text.readline()
-        while line != '':
-            if str(message.chat.id) == line.split()[4]:
-                role = 'Оператор'
-                flag = False
-                break
-            line = text.readline()
-        text.close()
-    if flag:
-        asknumber(message, numberverify)
+    if sqltable.getname(message.chat.id, 'users'):
+        usermenu(message)
+    elif sqltable.getname(message.chat.id, 'opers'):
+        operchoice(message)
     else:
-        if 'Пользователь' == role:
-            usermenu(message)
-        elif 'Оператор' == role:
-            operchoice(message)
+        asknumber(message, numberverify)
 
 
 def asknumber(message, func):
@@ -86,30 +64,22 @@ def asknumber(message, func):
 
 
 @bot.message_handler(content_types=["contact"])
-def numberverify(message):
+def numberverify(message):  # TODO сделать регистрацию в users
     if message.contact:
-        clist.updatebd()
-        file = open(r'fulllistcopy.txt', 'r', encoding="utf8")
-        line = file.readline()
-        flag = True
-        while line != '':
-            login = line.split().copy()
-            if login[3] == message.contact.phone_number:
-                file.close()
-                towrite = open(r'bdlist.txt', 'a', encoding="utf8")
-                towrite.write(
-                    login[0] + ' ' + login[1] + ' ' + login[2] + ' ' + login[3] + ' ' + str(message.chat.id) + '\n')
-                flag = False
-                break
-            line = file.readline()
-        if flag:
-            bot.send_message(message.chat.id, "Произошла ошибка, обратитесь к администратору")
-        else:
-            bot.send_message(message.chat.id, "Вы успешно зарегестрированы, доброо пожаловать в систему")
+        sqltable.updatingbd()
+        if sqltable.getnumber(message.contact.phone_number, 'bdlist'):
+            data = sqltable.getnumber(message.contact.phone_number, 'bdlist')
+            bot.send_message(message.chat.id, "Вы успешно зарегестрированы, добро пожаловать в систему")
+            sqltable.clearbdlist()
             usermenu(message)
             bot.register_next_step_handler(message, userrequest)
+        else:
+            bot.send_message(message.chat.id, "Произошла ошибка, обратитесь к администратору")
+            sqltable.clearbdlist()
+
     else:
         bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
+        sqltable.clearbdlist()
         asknumber(message, numberverify)
 
 
