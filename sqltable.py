@@ -47,14 +47,8 @@ def updatingbd():  # TODO пересмотреть надобность if на 
     text.close()
 
 
-def getname(userid, table):
-    cur.execute("""SELECT * FROM """ + table + """ WHERE userid='""" + str(userid) + """';""")
-    one_result = cur.fetchone()
-    return one_result
-
-
-def getnumber(number, table):
-    cur.execute("""SELECT * FROM """ + table + """ WHERE numbers='""" + str(number) + """';""")
+def getatt(att, table, tableatt):
+    cur.execute("""SELECT * FROM """ + table + """ WHERE """ + tableatt + """='""" + str(att) + """';""")
     one_result = cur.fetchone()
     return one_result
 
@@ -62,6 +56,12 @@ def getnumber(number, table):
 def insert(fio, email, number, table):
     cur.execute("""INSERT INTO """ + table + """ VALUES(
     '""" + fio + """', '""" + email + """', '""" + str(number) + """');""")
+    conn.commit()
+
+
+def insertuser(userid, fio, email, number, table):
+    cur.execute("""INSERT INTO """ + table + """ VALUES(
+        '""" + str(userid) + """', '""" + fio + """', '""" + email + """', '""" + str(number) + """');""")
     conn.commit()
 
 
