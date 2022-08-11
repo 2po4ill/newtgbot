@@ -49,7 +49,7 @@ def updatingbd():
 def getatt(att, table, tableatt):
     conn = sqlite3.connect('tgbot.db', check_same_thread=False)
     cur = conn.cursor()
-    cur.execute("""SELECT * FROM """ + table + """ WHERE """ + tableatt + """='""" + str(att) + """';""")
+    cur.execute("""SELECT * FROM """ + table + """ WHERE """ + tableatt + """='""" + sqlprevent(str(att)) + """';""")
     one_result = cur.fetchone()
     conn.close()
     return one_result
@@ -68,7 +68,7 @@ def insertreq(reqid, userid, reqtext):
     conn = sqlite3.connect('tgbot.db', check_same_thread=False)
     cur = conn.cursor()
     cur.execute("""INSERT INTO request VALUES(
-    '""" + reqid + """', '""" + str(userid) + """', '-', '""" + reqtext + """', 'open');""")
+    '""" + reqid + """', '""" + str(userid) + """', '-', '""" + sqlprevent(reqtext) + """', 'open');""")
     conn.commit()
     conn.close()
 
@@ -119,14 +119,30 @@ def readreqlist():
 
 
 def rightindex(index):
-    if 1 < index/10 and index/100 < 1:
+    if 1 <= index/10 and index/100 < 1:
         index = '000' + str(index)
-    elif 1 < index/100 and index/1000 < 1:
+    elif 1 <= index/100 and index/1000 < 1:
         index = '00' + str(index)
-    elif 1 < index/1000 and index/10000 < 1:
+    elif 1 <= index/1000 and index/10000 < 1:
         index = '0' + str(index)
-    elif 1 < index/10000 and index/100000 < 1:
+    elif 1 <= index/10000:
         index = str(index)
     else:
         index = '0000' + str(index)
     return index
+
+
+def loginsert(error, date, func):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO log VALUES('""" + sqlprevent(error) + """', '""" + date + """', '""" + func + """');""")
+    conn.commit()
+    conn.close()
+
+
+def sqlprevent(sentence):
+    newsen = ''
+    for i in sentence:
+        if i not in """'""" and i not in '"':
+            newsen += i
+    return newsen
