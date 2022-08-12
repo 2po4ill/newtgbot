@@ -4,6 +4,11 @@ import sqltable
 from datetime import datetime
 bot = telebot.TeleBot('5563607419:AAFfH-vzlFs7fJqo2xlhVtCQLq4W_HyUrLY')
 
+#TODO персонализировать back'и
+#TODO найти способ распределить код по функциям
+#TODO узнать про backup'ы
+#TODO сделать выбор запроса
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -31,8 +36,9 @@ def callback_inline(call):  # TODO персонализировать преоб
             elif call.data == 'operfunc':
                 markup = types.InlineKeyboardMarkup()
                 item1 = types.InlineKeyboardButton("Посмотреть список открытых запросов", callback_data='requestlist')
-                item2 = types.InlineKeyboardButton("Назад", callback_data='back')
-                markup.add(item1, item2)
+                item2 = types.InlineKeyboardButton("Посмотреть список моих запросов", callback_data='myrequest')
+                item3 = types.InlineKeyboardButton("Назад", callback_data='back')
+                markup.add(item1, item2, item3)
                 bot.send_message(call.message.chat.id, text='Меню', reply_markup=markup)
 
             elif call.data == 'pick':
@@ -66,6 +72,8 @@ def callback_inline(call):  # TODO персонализировать преоб
                 else:
                     bot.send_message(call.message.chat.id, 'Запрос уже не валиден')
                     operchoice(call.message)
+            elif call.data == 'myrequest':
+                myreqread(call.message)
             else:
                 if sqltable.getatt(call.data, 'request', 'reqid')[4] == 'open':
                     request = sqltable.getatt(call.data, 'request', 'reqid')
@@ -126,6 +134,30 @@ def reqread(message):
         bot.send_message(message.chat.id, 'Список открытых запросов пуст! Отличная работа')
 
 
+def myreqread(message):
+    if sqltable.readmyreqlist(message.chat.id):
+        idcollection = []
+        for i in sqltable.readmyreqlist(message.chat.id):
+            user = sqltable.getatt(i[1], 'users', 'userid')
+            if not user:
+                user = sqltable.getatt(i[1], 'opers', 'userid')
+            bot.send_message(message.chat.id, 'Запрос №' + i[0] + '\n' +
+                             'Пользователь: ' + user[1] + '\n' + i[3] +
+                             '\n' + 'Почта: ' + user[2] + '\n' + 'Телефон: ' + user[3])
+            idcollection.append(i[0])
+
+        markup = types.InlineKeyboardMarkup()
+        for j in idcollection:
+            item = types.InlineKeyboardButton( str(j), callback_data= str(j))
+            markup.add(item)
+        item = types.InlineKeyboardButton("Назад", callback_data='back')
+        markup.add(item)
+        bot.send_message(message.chat.id, text='Выберите запрос из списка', reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, 'Список ваших запросов пуст, '
+                                          'проверьте наличие запросов в ближайшее время')
+
+
 def asklogin(message):
     try:
         if sqltable.getatt(message.text, 'operdb', 'login'):
@@ -178,8 +210,10 @@ def asknumber(message, func):
                                  'Чтобы зарегестрироваться отправьте свой номер телефона',
                                  reply_markup=keyboard)
         bot.register_next_step_handler(nomer, func)
-    except:
+    except Exception as e:
         bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
+        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sqltable.loginsert(str(repr(e)), str(datetime_str), 'asknumber')
         asknumber(message, func)
 
 

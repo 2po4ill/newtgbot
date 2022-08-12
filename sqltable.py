@@ -118,6 +118,15 @@ def readreqlist():
     return all_result
 
 
+def readmyreqlist(userid):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM request WHERE status='proceed' AND operid='""" + userid + """';""")
+    all_result = cur.fetchall()
+    conn.close()
+    return all_result
+
+
 def rightindex(index):
     if 1 <= index/10 and index/100 < 1:
         index = '000' + str(index)
