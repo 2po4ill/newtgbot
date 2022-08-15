@@ -4,9 +4,9 @@ import sqltable
 from datetime import datetime
 bot = telebot.TeleBot('5563607419:AAFfH-vzlFs7fJqo2xlhVtCQLq4W_HyUrLY')
 
-#TODO персонализировать back'и
-#TODO найти способ распределить код по функциям
-#TODO узнать про backup'ы
+# TODO персонализировать back'и
+# TODO найти способ распределить код по функциям
+# TODO узнать про backup'ы
 
 
 @bot.message_handler(commands=['start'])
@@ -17,7 +17,7 @@ def start(message):
     bot.send_message(message.chat.id, text='Начинаем?', reply_markup=markup3)
 
 
-@bot.message_handler(content_types='text')
+@bot.message_handler(content_types=['text'])
 def userchat(message):
     if sqltable.getatt(str(message.chat.id), 'connections', 'userid'):
         oper = sqltable.getatt(str(message.chat.id), 'connections', 'userid')[1]
@@ -25,7 +25,7 @@ def userchat(message):
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def callback_inline(call):  # TODO персонализировать преобразование кнопок
+def callback_inline(call):
     try:
         if call.message:
             if call.data == 'begin':
@@ -78,8 +78,10 @@ def callback_inline(call):  # TODO персонализировать преоб
                 else:
                     bot.send_message(call.message.chat.id, 'Запрос уже не валиден')
                     operchoice(call.message)
+
             elif call.data == 'myrequest':
                 myreqread(call.message)
+
             elif '№' in call.data:
                 number = call.data.split()[1]
                 markup = types.InlineKeyboardMarkup()
@@ -89,6 +91,7 @@ def callback_inline(call):  # TODO персонализировать преоб
                 item4 = types.InlineKeyboardButton("Назад", callback_data='back')
                 markup.add(item1, item2, item3, item4)
                 bot.send_message(call.message.chat.id, text='Запрос №'+number, reply_markup=markup)
+
             elif 'chat' in call.data:
                 user = sqltable.getatt(call.data.split()[1], 'request', 'reqid')[1]
                 sqltable.createconnection(user, str(call.message.chat.id))
@@ -99,6 +102,7 @@ def callback_inline(call):  # TODO персонализировать преоб
                 bot.send_message(call.message.chat.id, 'Чат с пользователем открыт')
                 bot.send_message(int(user), 'По вашему запросу открыт чат с оператором:')
                 bot.register_next_step_handler(call.message, chat)
+
             elif 'reopen' in call.data:
                 reqid = call.data.split()[1]
                 user = sqltable.getatt(reqid, 'request', 'reqid')[1]
@@ -107,6 +111,7 @@ def callback_inline(call):  # TODO персонализировать преоб
                                  + ', мы вам сообщим когда его возьмет новый оператор')
                 bot.send_message(call.message.chat.id, 'Запрос успешно открыт')
                 operchoice(call.message)
+
             elif 'close' in call.data:
                 reqid = call.data.split()[1]
                 user = sqltable.getatt(reqid, 'request', 'reqid')[1]
@@ -133,8 +138,8 @@ def callback_inline(call):  # TODO персонализировать преоб
             bot.answer_callback_query(callback_query_id=call.id, show_alert=False,
                                       text="Выполняется....")
     except Exception as e:
-        bot.send_message(call.message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n"
-                                          "Или обратитесь к администратору")
+        bot.send_message(call.message.chat.id, "Ошибка вызова, попробуйте выполнить "
+                                               "команду еще раз \n Или обратитесь к администратору")
         datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sqltable.loginsert(str(repr(e)), str(datetime_str), 'callback_inline')
 
@@ -177,13 +182,7 @@ def askreqid(message):
 def reqread(message):
     if sqltable.readreqlist():
         for i in sqltable.readreqlist():
-            user = sqltable.getatt(i[1], 'users', 'userid')
-            if not user:
-                user = sqltable.getatt(i[1], 'opers', 'userid')
-            bot.send_message(message.chat.id, 'Запрос №' + i[0] + '\n' +
-                             'Пользователь: ' + user[1] + '\n' + i[3] +
-                             '\n' + 'Почта: ' + user[2] + '\n' + 'Телефон: ' + user[3])
-
+            userreqsendmsg(i, message)
         markup = types.InlineKeyboardMarkup()
         item1 = types.InlineKeyboardButton("Взять запрос на себя", callback_data='pick')
         item2 = types.InlineKeyboardButton("Назад", callback_data='back')
@@ -197,14 +196,8 @@ def myreqread(message):
     if sqltable.readmyreqlist(str(message.chat.id)):
         idcollection = []
         for i in sqltable.readmyreqlist(str(message.chat.id)):
-            user = sqltable.getatt(i[1], 'users', 'userid')
-            if not user:
-                user = sqltable.getatt(i[1], 'opers', 'userid')
-            bot.send_message(message.chat.id, 'Запрос №' + i[0] + '\n' +
-                             'Пользователь: ' + user[1] + '\n' + i[3] +
-                             '\n' + 'Почта: ' + user[2] + '\n' + 'Телефон: ' + user[3])
+            userreqsendmsg(i, message)
             idcollection.append(i[0])
-
         markup = types.InlineKeyboardMarkup()
         for j in idcollection:
             item = types.InlineKeyboardButton(str(j), callback_data='№ '+str(j))
@@ -215,6 +208,15 @@ def myreqread(message):
     else:
         bot.send_message(message.chat.id, 'Список ваших запросов пуст, '
                                           'проверьте наличие запросов в ближайшее время')
+
+
+def userreqsendmsg(userid, message):
+    user = sqltable.getatt(userid[1], 'users', 'userid')
+    if not user:
+        user = sqltable.getatt(userid[1], 'opers', 'userid')
+    bot.send_message(message.chat.id, 'Запрос №' + userid[0] + '\n' +
+                     'Пользователь: ' + user[1] + '\n' + userid[3] +
+                     '\n' + 'Почта: ' + user[2] + '\n' + 'Телефон: ' + user[3])
 
 
 def asklogin(message):
@@ -280,7 +282,8 @@ def asknumber(message, func):
 def numberverify(message):
     try:
         if message.contact:
-            if not sqltable.getatt(message.chat.id, 'users', 'userid'):
+            if not sqltable.getatt(message.chat.id, 'users', 'userid') \
+                    and sqltable.getatt(message.chat.id, 'opers', 'userid'):
                 sqltable.updatingbd()
                 if sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers'):
                     data = sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers')
