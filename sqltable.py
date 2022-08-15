@@ -1,4 +1,4 @@
-import sqlite3  # TODO для модерирования в ирл сделать закрытие и открытие соединения в каждой функции
+import sqlite3
 
 
 def numbermaker(numbers):
@@ -127,6 +127,22 @@ def readmyreqlist(userid):
     return all_result
 
 
+def closereq(reqid):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""UPDATE request SET status='closed' WHERE reqid='""" + reqid + """';""")
+    conn.commit()
+    conn.close()
+
+
+def resreq(reqid):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""UPDATE request SET status='open' WHERE reqid='""" + reqid + """';""")
+    conn.commit()
+    conn.close()
+
+
 def rightindex(index):
     if 1 <= index/10 and index/100 < 1:
         index = '000' + str(index)
@@ -155,3 +171,19 @@ def sqlprevent(sentence):
         if i not in """'""" and i not in '"':
             newsen += i
     return newsen
+
+
+def createconnection(userid, operid):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO connections VALUES('""" + userid + """', '""" + operid + """');""")
+    conn.commit()
+    conn.close()
+
+
+def deleteconnection(operid):
+    conn = sqlite3.connect('tgbot.db', check_same_thread=False)
+    cur = conn.cursor()
+    cur.execute("""DELETE FROM connections WHERE operid='""" + operid + """';""")
+    conn.commit()
+    conn.close()

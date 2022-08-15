@@ -7,7 +7,6 @@ bot = telebot.TeleBot('5563607419:AAFfH-vzlFs7fJqo2xlhVtCQLq4W_HyUrLY')
 #TODO персонализировать back'и
 #TODO найти способ распределить код по функциям
 #TODO узнать про backup'ы
-#TODO сделать выбор запроса
 
 
 @bot.message_handler(commands=['start'])
@@ -16,6 +15,13 @@ def start(message):
     item1 = types.InlineKeyboardButton("Начать", callback_data='begin')
     markup3.add(item1)
     bot.send_message(message.chat.id, text='Начинаем?', reply_markup=markup3)
+
+
+@bot.message_handler(content_types='text')
+def userchat(message):
+    if sqltable.getatt(str(message.chat.id), 'connections', 'userid'):
+        oper = sqltable.getatt(str(message.chat.id), 'connections', 'userid')[1]
+        bot.send_message(int(oper), message.text)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -74,6 +80,40 @@ def callback_inline(call):  # TODO персонализировать преоб
                     operchoice(call.message)
             elif call.data == 'myrequest':
                 myreqread(call.message)
+            elif '№' in call.data:
+                number = call.data.split()[1]
+                markup = types.InlineKeyboardMarkup()
+                item1 = types.InlineKeyboardButton("Закрыть запрос", callback_data='close '+number)
+                item2 = types.InlineKeyboardButton("Снять с себя запрос", callback_data='reopen '+number)
+                item3 = types.InlineKeyboardButton("Открыть чат с пользователем", callback_data='chat '+number)
+                item4 = types.InlineKeyboardButton("Назад", callback_data='back')
+                markup.add(item1, item2, item3, item4)
+                bot.send_message(call.message.chat.id, text='Запрос №'+number, reply_markup=markup)
+            elif 'chat' in call.data:
+                user = sqltable.getatt(call.data.split()[1], 'request', 'reqid')[1]
+                sqltable.createconnection(user, str(call.message.chat.id))
+                markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                btn1 = types.KeyboardButton("БОТ СТОП")
+                markup.add(btn1)
+                bot.send_message(call.message.chat.id, 'Чтобы закрыть чат напишите БОТ СТОП', reply_markup=markup)
+                bot.send_message(call.message.chat.id, 'Чат с пользователем открыт')
+                bot.send_message(int(user), 'По вашему запросу открыт чат с оператором:')
+                bot.register_next_step_handler(call.message, chat)
+            elif 'reopen' in call.data:
+                reqid = call.data.split()[1]
+                user = sqltable.getatt(reqid, 'request', 'reqid')[1]
+                sqltable.resreq(reqid)
+                bot.send_message(user, 'Оператор снял ваш запрос №' + reqid
+                                 + ', мы вам сообщим когда его возьмет новый оператор')
+                bot.send_message(call.message.chat.id, 'Запрос успешно открыт')
+                operchoice(call.message)
+            elif 'close' in call.data:
+                reqid = call.data.split()[1]
+                user = sqltable.getatt(reqid, 'request', 'reqid')[1]
+                sqltable.closereq(reqid)
+                bot.send_message(user, 'Ваш запрос №' + reqid + ' закрыт')
+                bot.send_message(call.message.chat.id, 'Запрос успешно закрыт')
+                operchoice(call.message)
             else:
                 if sqltable.getatt(call.data, 'request', 'reqid')[4] == 'open':
                     request = sqltable.getatt(call.data, 'request', 'reqid')
@@ -97,6 +137,25 @@ def callback_inline(call):  # TODO персонализировать преоб
                                           "Или обратитесь к администратору")
         datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
         sqltable.loginsert(str(repr(e)), str(datetime_str), 'callback_inline')
+
+
+def chat(message):
+    try:
+        if not message.text == 'БОТ СТОП':
+            user = sqltable.getatt(str(message.chat.id), 'connections', 'operid')[0]
+            bot.send_message(int(user), message.text)
+            bot.register_next_step_handler(message, chat)
+        else:
+            user = sqltable.getatt(str(message.chat.id), 'connections', 'operid')[0]
+            sqltable.deleteconnection(str(message.chat.id))
+            bot.send_message(message.chat.id, 'Соединение успешно закрыто')
+            bot.send_message(int(user), 'Оператор закрыл с вами чат')
+            operchoice(message)
+    except Exception as e:
+        bot.send_message(message.chat.id, "Ошибка вашего сообщения \n Убедитесь что отправляете текст!")
+        bot.send_message(message.chat.id, "Или обратитесь к администратору")
+        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sqltable.loginsert(str(repr(e)), str(datetime_str), 'chat')
 
 
 def askreqid(message):
@@ -135,9 +194,9 @@ def reqread(message):
 
 
 def myreqread(message):
-    if sqltable.readmyreqlist(message.chat.id):
+    if sqltable.readmyreqlist(str(message.chat.id)):
         idcollection = []
-        for i in sqltable.readmyreqlist(message.chat.id):
+        for i in sqltable.readmyreqlist(str(message.chat.id)):
             user = sqltable.getatt(i[1], 'users', 'userid')
             if not user:
                 user = sqltable.getatt(i[1], 'opers', 'userid')
@@ -148,7 +207,7 @@ def myreqread(message):
 
         markup = types.InlineKeyboardMarkup()
         for j in idcollection:
-            item = types.InlineKeyboardButton( str(j), callback_data= str(j))
+            item = types.InlineKeyboardButton(str(j), callback_data='№ '+str(j))
             markup.add(item)
         item = types.InlineKeyboardButton("Назад", callback_data='back')
         markup.add(item)
