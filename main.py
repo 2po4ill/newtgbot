@@ -28,109 +28,42 @@ def userchat(message):
 def callback_inline(call):
     try:
         if call.message:
-            if call.data == 'begin':
-                bot.send_message(call.message.chat.id, 'Вот и отличненько ')
-                verify(call.message)
-
-            elif call.data == 'user':
-                asknumber(call.message, numberverify)
-
-            elif call.data == 'oper':
-                bot.send_message(call.message.chat.id, "Введите логин")
-                bot.register_next_step_handler(call.message, asklogin)
-
-            elif call.data == 'operfunc':
-                markup = types.InlineKeyboardMarkup()
-                item1 = types.InlineKeyboardButton("Посмотреть список открытых запросов", callback_data='requestlist')
-                item2 = types.InlineKeyboardButton("Посмотреть список моих запросов", callback_data='myrequest')
-                item3 = types.InlineKeyboardButton("Назад", callback_data='back')
-                markup.add(item1, item2, item3)
-                bot.send_message(call.message.chat.id, text='Меню', reply_markup=markup)
-
-            elif call.data == 'pick':
-                askreqid(call.message)
-
-            elif call.data == 'requestlist':
-                reqread(call.message)
-
-            elif call.data == 'userfunc':
-                markup = types.InlineKeyboardMarkup()
-                item1 = types.InlineKeyboardButton("Сделать запрос", callback_data='request')
-                item2 = types.InlineKeyboardButton("Назад", callback_data='back')
-                markup.add(item1, item2)
-                bot.send_message(call.message.chat.id, text='Меню', reply_markup=markup)
-
-            elif call.data == 'back':
-                operchoice(call.message)
-
-            elif call.data == 'request':
-                bot.send_message(call.message.chat.id, "Напишите свой запрос:")
-                bot.register_next_step_handler(call.message, requeststart)
-
-            elif call.data == 'accept':
-                reqid = call.message.text.split()[0]
-                datareq = sqltable.getatt(reqid, 'request', 'reqid')
-                if datareq[4] == 'open':
-                    data = sqltable.getatt(call.message.chat.id, 'opers', 'userid')
-                    sqltable.insertoper(reqid, call.message.chat.id)
-                    bot.send_message(datareq[1], "Ваш запрос обрабатывается оператором: " + data[1])
+            values = call.data.split()
+            match values[0]:
+                case "begin":
+                    verify(call.message)
+                case "user":
+                    asknumber(call.message, numberverify)
+                case "oper":
+                    bot.send_message(call.message.chat.id, "Введите логин")
+                    bot.register_next_step_handler(call.message, asklogin)
+                case "operfunc":
+                    operfunc(call.message)
+                case "pick":
+                    askreqid(call.message)
+                case "requestlist":
+                    reqread(call.message)
+                case "userfunc":
+                    userfunc(call.message)
+                case "back":
                     operchoice(call.message)
-                else:
-                    bot.send_message(call.message.chat.id, 'Запрос уже не валиден')
-                    operchoice(call.message)
-
-            elif call.data == 'myrequest':
-                myreqread(call.message)
-
-            elif '№' in call.data:
-                number = call.data.split()[1]
-                markup = types.InlineKeyboardMarkup()
-                item1 = types.InlineKeyboardButton("Закрыть запрос", callback_data='close '+number)
-                item2 = types.InlineKeyboardButton("Снять с себя запрос", callback_data='reopen '+number)
-                item3 = types.InlineKeyboardButton("Открыть чат с пользователем", callback_data='chat '+number)
-                item4 = types.InlineKeyboardButton("Назад", callback_data='back')
-                markup.add(item1, item2, item3, item4)
-                bot.send_message(call.message.chat.id, text='Запрос №'+number, reply_markup=markup)
-
-            elif 'chat' in call.data:
-                user = sqltable.getatt(call.data.split()[1], 'request', 'reqid')[1]
-                sqltable.createconnection(user, str(call.message.chat.id))
-                markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-                btn1 = types.KeyboardButton("БОТ СТОП")
-                markup.add(btn1)
-                bot.send_message(call.message.chat.id, 'Чтобы закрыть чат напишите БОТ СТОП', reply_markup=markup)
-                bot.send_message(call.message.chat.id, 'Чат с пользователем открыт')
-                bot.send_message(int(user), 'По вашему запросу открыт чат с оператором:')
-                bot.register_next_step_handler(call.message, chat)
-
-            elif 'reopen' in call.data:
-                reqid = call.data.split()[1]
-                user = sqltable.getatt(reqid, 'request', 'reqid')[1]
-                sqltable.resreq(reqid)
-                bot.send_message(user, 'Оператор снял ваш запрос №' + reqid
-                                 + ', мы вам сообщим когда его возьмет новый оператор')
-                bot.send_message(call.message.chat.id, 'Запрос успешно открыт')
-                operchoice(call.message)
-
-            elif 'close' in call.data:
-                reqid = call.data.split()[1]
-                user = sqltable.getatt(reqid, 'request', 'reqid')[1]
-                sqltable.closereq(reqid)
-                bot.send_message(user, 'Ваш запрос №' + reqid + ' закрыт')
-                bot.send_message(call.message.chat.id, 'Запрос успешно закрыт')
-                operchoice(call.message)
-            else:
-                if sqltable.getatt(call.data, 'request', 'reqid')[4] == 'open':
-                    request = sqltable.getatt(call.data, 'request', 'reqid')
-                    oper = sqltable.getatt(call.message.chat.id, 'opers', 'userid')
-                    sqltable.insertoper(call.data, call.message.chat.id)
-                    bot.send_message(request[1], 'Ваш запрос обрабатывается оператором: ' + oper[1])
-                    bot.send_message(call.message.chat.id, 'Вы обрабатываете запрос №' + call.data)
-                    operchoice(call.message)
-                else:
-                    bot.send_message(call.message.chat.id, 'Запрос уже не валиден')
-                    operchoice(call.message)
-
+                case "request":
+                    bot.send_message(call.message.chat.id, "Напишите свой запрос:")
+                    bot.register_next_step_handler(call.message, requeststart)
+                case "accept":
+                    accept(call.message)
+                case "myrequest":
+                    myreqread(call.message)
+                case "№":
+                    myreqfunc(call)
+                case "chat":
+                    chatstart(call)
+                case "reopen":
+                    reopen(call)
+                case "close":
+                    close(call)
+                case _:
+                    chsopenreq(call)
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                   text='f',
                                   reply_markup=None)
@@ -144,18 +77,168 @@ def callback_inline(call):
         sqltable.loginsert(str(repr(e)), str(datetime_str), 'callback_inline')
 
 
+def verify(message):
+    if sqltable.getatt(message.chat.id, 'users', 'userid'):
+        usermenu(message)
+    elif sqltable.getatt(message.chat.id, 'opers', 'userid'):
+        operchoice(message)
+    else:
+        variantreg(message)
+
+
+def variantreg(message):
+    markup3 = types.InlineKeyboardMarkup()
+    item1 = types.InlineKeyboardButton("Я пользователь", callback_data='user')
+    item2 = types.InlineKeyboardButton("Я оператор", callback_data='oper')
+    markup3.add(item1, item2)
+    bot.send_message(message.chat.id, text='Как вы хотите зарегистрироваться?', reply_markup=markup3)
+
+
+def asknumber(message, func):
+    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    reg_button = types.KeyboardButton(text="Отправить номер телефона", request_contact=True)
+    keyboard.add(reg_button)
+    try:
+        nomer = bot.send_message(message.chat.id,
+                                 'Чтобы зарегестрироваться отправьте свой номер телефона',
+                                 reply_markup=keyboard)
+        bot.register_next_step_handler(nomer, func)
+    except Exception as e:
+        bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
+        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sqltable.loginsert(str(repr(e)), str(datetime_str), 'asknumber')
+        asknumber(message, func)
+
+
+@bot.message_handler(content_types=["contact"])
+def numberverify(message):
+    try:
+        if message.contact:
+            if not sqltable.getatt(message.chat.id, 'users', 'userid') \
+                    and sqltable.getatt(message.chat.id, 'opers', 'userid'):
+                sqltable.updatingbd()
+                if sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers'):
+                    data = sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers')
+                    sqltable.insertuser(message.chat.id, data[0], data[1], data[2], 'users')
+                    bot.send_message(message.chat.id, "Вы успешно зарегестрированы, добро пожаловать в систему")
+                    sqltable.clearbdlist()
+                    usermenu(message)
+                else:
+                    bot.send_message(message.chat.id, "Произошла ошибка, обратитесь к администратору")
+                    sqltable.clearbdlist()
+            else:
+                bot.send_message(message.chat.id, "Вы уже зарегистрированы")
+                usermenu(message)
+        else:
+            bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
+            sqltable.clearbdlist()
+            asknumber(message, numberverify)
+    except Exception as e:
+        bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
+                                          "Или обратитесь к администратору")
+
+        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        sqltable.loginsert(str(repr(e)), str(datetime_str), 'numberverify')
+        asknumber(message, numberverify)
+
+
+def chsopenreq(call):
+    if sqltable.getatt(call.data, 'request', 'reqid')[4] == 'open':
+        request = sqltable.getatt(call.data, 'request', 'reqid')
+        oper = sqltable.getatt(call.message.chat.id, 'opers', 'userid')
+        sqltable.insertoper(call.data, call.message.chat.id)
+        bot.send_message(request[1], 'Ваш запрос обрабатывается оператором: ' + oper[1])
+        bot.send_message(call.message.chat.id, 'Вы обрабатываете запрос №' + call.data)
+        operchoice(call.message)
+    else:
+        bot.send_message(call.message.chat.id, 'Запрос уже не валиден')
+        operchoice(call.message)
+
+
+def close(call):
+    reqid = call.data.split()[1]
+    user = sqltable.getatt(reqid, 'request', 'reqid')[1]
+    sqltable.closereq(reqid)
+    bot.send_message(user, 'Ваш запрос №' + reqid + ' закрыт')
+    bot.send_message(call.message.chat.id, 'Запрос успешно закрыт')
+    operchoice(call.message)
+
+
+def reopen(call):
+    reqid = call.data.split()[1]
+    user = sqltable.getatt(reqid, 'request', 'reqid')[1]
+    sqltable.resreq(reqid)
+    bot.send_message(user, 'Оператор снял ваш запрос №' + reqid
+                     + ', мы вам сообщим когда его возьмет новый оператор')
+    bot.send_message(call.message.chat.id, 'Запрос успешно открыт')
+    operchoice(call.message)
+
+
+def myreqfunc(call):
+    number = call.data.split()[1]
+    markup = types.InlineKeyboardMarkup()
+    item1 = types.InlineKeyboardButton("Закрыть запрос", callback_data='close ' + number)
+    item2 = types.InlineKeyboardButton("Снять с себя запрос", callback_data='reopen ' + number)
+    item3 = types.InlineKeyboardButton("Открыть чат с пользователем", callback_data='chat ' + number)
+    item4 = types.InlineKeyboardButton("Назад", callback_data='back')
+    markup.add(item1, item2, item3, item4)
+    bot.send_message(call.message.chat.id, text='Запрос №' + number, reply_markup=markup)
+
+
+def accept(message):
+    reqid = message.text.split()[0]
+    datareq = sqltable.getatt(reqid, 'request', 'reqid')
+    if datareq[4] == 'open':
+        data = sqltable.getatt(message.chat.id, 'opers', 'userid')
+        sqltable.insertoper(reqid, message.chat.id)
+        bot.send_message(datareq[1], "Ваш запрос обрабатывается оператором: " + data[1])
+        operchoice(message)
+    else:
+        bot.send_message(message.chat.id, 'Запрос уже не валиден')
+        operchoice(message)
+
+
+def userfunc(message):
+    markup = types.InlineKeyboardMarkup()
+    item1 = types.InlineKeyboardButton("Сделать запрос", callback_data='request')
+    item2 = types.InlineKeyboardButton("Назад", callback_data='back')
+    markup.add(item1, item2)
+    bot.send_message(message.chat.id, text='Меню', reply_markup=markup)
+
+
+def operfunc(message):
+    markup = types.InlineKeyboardMarkup()
+    item1 = types.InlineKeyboardButton("Посмотреть список открытых запросов", callback_data='requestlist')
+    item2 = types.InlineKeyboardButton("Посмотреть список моих запросов", callback_data='myrequest')
+    item3 = types.InlineKeyboardButton("Назад", callback_data='back')
+    markup.add(item1, item2, item3)
+    bot.send_message(message.chat.id, text='Меню', reply_markup=markup)
+
+
+def chatstart(call):
+    user = sqltable.getatt(call.data.split()[1], 'request', 'reqid')[1]
+    sqltable.createconnection(user, str(call.message.chat.id))
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("БОТ СТОП")
+    markup.add(btn1)
+    bot.send_message(call.message.chat.id, 'Чтобы закрыть чат напишите БОТ СТОП', reply_markup=markup)
+    bot.send_message(call.message.chat.id, 'Чат с пользователем открыт')
+    bot.send_message(user, 'По вашему запросу открыт чат с оператором:')
+    bot.register_next_step_handler(call.message, chat)
+
+
 def chat(message):
     try:
-        if not message.text == 'БОТ СТОП':
-            user = sqltable.getatt(str(message.chat.id), 'connections', 'operid')[0]
-            bot.send_message(int(user), message.text)
-            bot.register_next_step_handler(message, chat)
-        else:
+        if message.text == 'БОТ СТОП':
             user = sqltable.getatt(str(message.chat.id), 'connections', 'operid')[0]
             sqltable.deleteconnection(str(message.chat.id))
             bot.send_message(message.chat.id, 'Соединение успешно закрыто')
-            bot.send_message(int(user), 'Оператор закрыл с вами чат')
+            bot.send_message(user, 'Оператор закрыл с вами чат')
             operchoice(message)
+        else:
+            user = sqltable.getatt(str(message.chat.id), 'connections', 'operid')[0]
+            bot.send_message(user, message.text)
+            bot.register_next_step_handler(message, chat)
     except Exception as e:
         bot.send_message(message.chat.id, "Ошибка вашего сообщения \n Убедитесь что отправляете текст!")
         bot.send_message(message.chat.id, "Или обратитесь к администратору")
@@ -243,71 +326,6 @@ def asklogin(message):
         sqltable.loginsert(str(repr(e)), str(datetime_str), 'asklogin')
         bot.send_message(message.chat.id, "Введите логин")
         bot.register_next_step_handler(message, asklogin)
-
-
-def verify(message):
-    if sqltable.getatt(message.chat.id, 'users', 'userid'):
-        usermenu(message)
-    elif sqltable.getatt(message.chat.id, 'opers', 'userid'):
-        operchoice(message)
-    else:
-        variantreg(message)
-
-
-def variantreg(message):
-    markup3 = types.InlineKeyboardMarkup()
-    item1 = types.InlineKeyboardButton("Я пользователь", callback_data='user')
-    item2 = types.InlineKeyboardButton("Я оператор", callback_data='oper')
-    markup3.add(item1, item2)
-    bot.send_message(message.chat.id, text='Как вы хотите зарегистрироваться?', reply_markup=markup3)
-
-
-def asknumber(message, func):
-    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    reg_button = types.KeyboardButton(text="Отправить номер телефона", request_contact=True)
-    keyboard.add(reg_button)
-    try:
-        nomer = bot.send_message(message.chat.id,
-                                 'Чтобы зарегестрироваться отправьте свой номер телефона',
-                                 reply_markup=keyboard)
-        bot.register_next_step_handler(nomer, func)
-    except Exception as e:
-        bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
-        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sqltable.loginsert(str(repr(e)), str(datetime_str), 'asknumber')
-        asknumber(message, func)
-
-
-@bot.message_handler(content_types=["contact"])
-def numberverify(message):
-    try:
-        if message.contact:
-            if not sqltable.getatt(message.chat.id, 'users', 'userid') \
-                    and sqltable.getatt(message.chat.id, 'opers', 'userid'):
-                sqltable.updatingbd()
-                if sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers'):
-                    data = sqltable.getatt(message.contact.phone_number, 'bdlist', 'numbers')
-                    sqltable.insertuser(message.chat.id, data[0], data[1], data[2], 'users')
-                    bot.send_message(message.chat.id, "Вы успешно зарегестрированы, добро пожаловать в систему")
-                    sqltable.clearbdlist()
-                    usermenu(message)
-                else:
-                    bot.send_message(message.chat.id, "Произошла ошибка, обратитесь к администратору")
-                    sqltable.clearbdlist()
-            else:
-                bot.send_message(message.chat.id, "Вы уже зарегистрированы")
-                usermenu(message)
-        else:
-            bot.send_message(message.chat.id, "Ошибка, воспользуйтесь меню для распознования номера")
-            sqltable.clearbdlist()
-            asknumber(message, numberverify)
-    except Exception as e:
-        bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
-                                          "Или обратитесь к администратору")
-
-        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sqltable.loginsert(str(repr(e)), str(datetime_str), 'numberverify')
-        asknumber(message, numberverify)
 
 
 def usermenu(message):
