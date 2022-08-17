@@ -327,7 +327,7 @@ def reqread(message):
 def userreqsendmsg(userid, message):
     """
     userreqsendmsg(message) - функция для отправки оператору списка запросов
-    :param userid: Кортеж содержащий id телеграмм пользователя отправившего запрос
+    :param userid: Кортеж содержащий id телеграмм пользователя отправившего запрос и номер запроса
     :param message: Данные последнего отосланного пользователем сообщения
     """
     user = sqltable.getatt(userid[1], 'users', 'userid')
