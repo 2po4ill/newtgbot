@@ -12,7 +12,7 @@ bot = telebot.TeleBot('5563607419:AAFfH-vzlFs7fJqo2xlhVtCQLq4W_HyUrLY')
 def start(message):
     """
     start(message) - функция для начала работы с телеграмм ботом
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     markup3 = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton("Начать", callback_data='begin')
@@ -24,8 +24,8 @@ def start(message):
 def callback_inline(call):
     """
     callback_inline(call) - функция-агрегатор для распознования нажатий на инлайн-кнопки
-    :param call: Данные нажатия инлайн кнопки
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :param call: Тип call, данные нажатия инлайн кнопки
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     try:
         if call.message:
@@ -81,7 +81,7 @@ def callback_inline(call):
 def verify(message):
     """
     verify(message) - фунция для проверки пользователя на его существование в бд
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.getatt(message.chat.id, 'users', 'userid'):
         usermenu(message)
@@ -94,7 +94,7 @@ def verify(message):
 def variantreg(message):
     """
     variantreg(message) - функция-интерфейс выбора типа регистрации
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     markup3 = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton("Я пользователь", callback_data='user')
@@ -106,9 +106,9 @@ def variantreg(message):
 def asknumber(message, func):
     """
     asknumber(message, func) - функция-интерфейс для получения номера телефона от пользователя
-    :param message: Данные последнего отосланного пользователем сообщения
-    :param func: Функция в которую переходит номер телефона для дальнейшей регистрации
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
+    :param func: Тип def, функция в которую переходит номер телефона для дальнейшей регистрации
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     reg_button = types.KeyboardButton(text="Отправить номер телефона", request_contact=True)
@@ -129,8 +129,8 @@ def asknumber(message, func):
 def numberverify(message):
     """
     numberverify(message) - функция для проверки пользователя на его существование в бд при сбрасывания им номера
-    :param message: Данные последнего отосланного пользователем сообщения
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     try:
         if message.contact:
@@ -165,7 +165,7 @@ def numberverify(message):
 def usermenu(message):
     """
     usermenu(message) - функция-интерфейс для создания запроса
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.getatt(message.chat.id, 'users', 'userid'):
         markup3 = types.InlineKeyboardMarkup()
@@ -186,8 +186,8 @@ def usermenu(message):
 def requeststart(message):
     """
     requeststart(message) - функция для занесения в бд запроса и последующей его отправки операторам
-    :param message: Данные последнего отосланного пользователем сообщения
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     try:
         data = sqltable.getlist('request')
@@ -219,8 +219,8 @@ def requeststart(message):
 def yesno(message, index):
     """
     yesno(message) - функция-интерфейс для принятие/отклонения поступающего запроса
-    :param message: Данные последнего отосланного пользователем сообщения
-    :param index: Номер запроса, который приходит оператору и записывается в бд
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
+    :param index: Тип str, номер запроса, который приходит оператору и записывается в бд
     """
     markup = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton("Принять", callback_data='accept')
@@ -232,7 +232,7 @@ def yesno(message, index):
 def accept(message):
     """
     accept(message) - функция закрепляющая оператора за актуальным запросом
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     reqid = message.text.split()[0]
     datareq = sqltable.getatt(reqid, 'request', 'reqid')
@@ -249,8 +249,8 @@ def accept(message):
 def asklogin(message):
     """
     asklogin(message) - функция для регистрации пользователя через логин
-    :param message: Данные последнего отосланного пользователем сообщения
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     try:
         if sqltable.getatt(message.text, 'operdb', 'login'):
@@ -280,7 +280,7 @@ def asklogin(message):
 def operchoice(message):
     """
     operchoice(message) - функция-интерфейс для выбора оператором роли
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.getatt(message.chat.id, 'opers', 'userid'):
         markup = types.InlineKeyboardMarkup()
@@ -297,7 +297,7 @@ def operchoice(message):
 def operfunc(message):
     """
     operfunc(message) - функция-интерфейс взаимодействия со списками запросов
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     markup = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton("Посмотреть список открытых запросов", callback_data='requestlist')
@@ -310,7 +310,7 @@ def operfunc(message):
 def reqread(message):
     """
     reqread(message) - функция-интерфейс для вывода списка открытых запросов
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.readreqlist():
         for i in sqltable.readreqlist():
@@ -327,8 +327,8 @@ def reqread(message):
 def userreqsendmsg(userid, message):
     """
     userreqsendmsg(message) - функция для отправки оператору списка запросов
-    :param userid: Кортеж содержащий id телеграмм пользователя отправившего запрос и номер запроса
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param userid: Тип кортеж, кортеж содержащий id телеграмм пользователя отправившего запрос и номер запроса
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     user = sqltable.getatt(userid[1], 'users', 'userid')
     if not user:
@@ -341,7 +341,7 @@ def userreqsendmsg(userid, message):
 def askreqid(message):
     """
     askreqid(message) - функция-интерфейс для выбора нужного из открытых запросов
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     data = sqltable.readreqlist()
     if data:
@@ -361,7 +361,7 @@ def askreqid(message):
 def chsopenreq(call):
     """
     chsopenreq(call) - функция регистрации оператора за запросом в бд
-    :param call: Данные нажатия инлайн кнопки
+    :param call: Тип call, данные нажатия инлайн кнопки
     """
     if sqltable.getatt(call.data, 'request', 'reqid')[4] == 'open':
         request = sqltable.getatt(call.data, 'request', 'reqid')
@@ -378,7 +378,7 @@ def chsopenreq(call):
 def myreqread(message):
     """
     myreqread(message) - функция-интерфейс для выбора нужного из взятых запросов
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.readmyreqlist(str(message.chat.id)):
         idcollection = []
@@ -400,7 +400,7 @@ def myreqread(message):
 def myreqfunc(call):
     """
     myreqfunc(call) - функция-интерфейс для выбора опций над выбранным запросом
-    :param call: Данные нажатия инлайн кнопки
+    :param call: Тип call, данные нажатия инлайн кнопки
     """
     number = call.data.split()[1]
     markup = types.InlineKeyboardMarkup()
@@ -415,7 +415,7 @@ def myreqfunc(call):
 def close(call):
     """
     close(call) - функция закрывающая запрос
-    :param call: Данные нажатия инлайн кнопки
+    :param call: Тип call, данные нажатия инлайн кнопки
     """
     reqid = call.data.split()[1]
     user = sqltable.getatt(reqid, 'request', 'reqid')[1]
@@ -428,7 +428,7 @@ def close(call):
 def reopen(call):
     """
     reopen(call) - функция заново открывающая запрос
-    :param call: Данные нажатия инлайн кнопки
+    :param call: Тип call, данные нажатия инлайн кнопки
     """
     reqid = call.data.split()[1]
     user = sqltable.getatt(reqid, 'request', 'reqid')[1]
@@ -442,9 +442,18 @@ def reopen(call):
 def chatstart(call):
     """
     chatstart(call) - функция соединяющая оператора и пользователя с помощью чата
-    :param call: Данные нажатия инлайн кнопки
+    :param call: Тип call, данные нажатия инлайн кнопки
+    :return Тип bool, выполнение или его отсутствие
     """
     user = sqltable.getatt(call.data.split()[1], 'request', 'reqid')[1]
+    connections = sqltable.getlist('connections')
+    if connections:
+        for i in connections:
+            if user in i or str(call.message.chat.id) in i:
+                bot.send_message(call.message.chat.id, 'Вы или пользователь уже '
+                                                       'имеете открытый чат, закончите его, '
+                                                       'чтобы продолжить или обратитесь к администратору')
+                return False
     sqltable.createconnection(user, str(call.message.chat.id))
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("БОТ СТОП")
@@ -459,7 +468,7 @@ def chat(message):
     """
     chat(message) - функция пересылающая сообщения оператора пользователю при присутствии соединения
     :param message: Данные последнего отосланного пользователем сообщения
-    :exception e: Данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
+    :exception e: Тип str, данные об произошедшей ошибке, сразу записываются в таблицу log базы данных с временным отпечатком
     """
     try:
         if message.text == 'БОТ СТОП':
@@ -483,7 +492,7 @@ def chat(message):
 def userchat(message):
     """
     userchat(message) - функция пересылающая сообщения пользователя оператору при присутствии соединения
-    :param message: Данные последнего отосланного пользователем сообщения
+    :param message: Тип message, данные последнего отосланного пользователем сообщения
     """
     if sqltable.getatt(str(message.chat.id), 'connections', 'userid'):
         oper = sqltable.getatt(str(message.chat.id), 'connections', 'userid')[1]
