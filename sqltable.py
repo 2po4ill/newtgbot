@@ -211,6 +211,8 @@ def resreq(reqid):
     cur = conn.cursor()
     cur.execute("""UPDATE request SET status='open' WHERE reqid='""" + reqid + """';""")
     conn.commit()
+    cur.execute("""UPDATE request SET operid='-' WHERE reqid='""" + reqid + """';""")
+    conn.commit()
     conn.close()
 
 
@@ -283,3 +285,4 @@ def deleteconnection(operid):
     cur.execute("""DELETE FROM connections WHERE operid='""" + operid + """';""")
     conn.commit()
     conn.close()
+
