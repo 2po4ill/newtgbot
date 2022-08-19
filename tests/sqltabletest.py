@@ -287,7 +287,7 @@ def test_sqlprevent():
 def connections():
     conn = sqlite3.connect('tgbot.db', check_same_thread=False)
     cur = conn.cursor()
-    cur.execute("""DROP TABLE IF EXISTS log;""")
+    cur.execute("""DROP TABLE IF EXISTS connections;""")
     conn.commit()
     cur.execute("""CREATE TABLE IF NOT EXISTS connections( 
                     userid TEXT,
