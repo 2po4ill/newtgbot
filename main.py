@@ -154,12 +154,14 @@ def numberverify(message):
             sqltable.clearbdlist()
             asknumber(message, numberverify)
     except Exception as e:
-        bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
-                                          "Или обратитесь к администратору")
-
-        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sqltable.loginsert(str(repr(e)), str(datetime_str), 'numberverify')
-        asknumber(message, numberverify)
+        if sqltable.sqlprevent(str(repr(e))) == 'OperationalError(no such table: bdlist)':
+            numberverify(message)
+        else:
+            bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
+                                              "Или обратитесь к администратору")
+            datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            sqltable.loginsert(str(repr(e)), str(datetime_str), 'numberverify')
+            asknumber(message, numberverify)
 
 
 def usermenu(message):
@@ -268,13 +270,15 @@ def asklogin(message):
         else:
             bot.send_message(message.chat.id, "Произошла ошибка, обратитесь к администратору")
     except Exception as e:
-        bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
-                                          "Или обратитесь к администратору")
-
-        datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sqltable.loginsert(str(repr(e)), str(datetime_str), 'asklogin')
-        bot.send_message(message.chat.id, "Введите логин")
-        bot.register_next_step_handler(message, asklogin)
+        if sqltable.sqlprevent(str(repr(e))) == 'OperationalError(no such table: bdlist)':
+            asklogin(message)
+        else:
+            bot.send_message(message.chat.id, "Ошибка вызова, попробуйте выполнить команду еще раз \n "
+                                              "Или обратитесь к администратору")
+            datetime_str = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            sqltable.loginsert(str(repr(e)), str(datetime_str), 'asklogin')
+            bot.send_message(message.chat.id, "Введите логин")
+            bot.register_next_step_handler(message, asklogin)
 
 
 def operchoice(message):
